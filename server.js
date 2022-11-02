@@ -2,8 +2,18 @@ const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const routes = require('./routes/index')
+const db = require('./config/db.js')
 
 const app = express()
+
+// Database connection
+db.connect((err) => {
+    if (err) {
+      console.log("Error occurred", err);
+    } else {
+      console.log("Connected to MySQL Server");
+    }
+});
 
 app.use(cors({origin: ['http://localhost:8080'],}))
 app.use(bodyParser.json())
