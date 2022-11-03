@@ -1,6 +1,9 @@
 var con = require('../config/db')
 const bcrypt = require('bcryptjs');
 const JWT = require('jsonwebtoken')
+const util = require('util');
+var async = require('async');
+var helpers = require('./helpers')
 
 var routesActions = {
     signup: (req,res) =>{
@@ -403,7 +406,7 @@ var routesActions = {
         "INDEX `evento_"+betTypeName+"_idx` (`evento_"+betTypeName+"` ASC) VISIBLE, "+
         "CONSTRAINT `evento_"+betTypeName+"` "+
           "FOREIGN KEY (`evento_"+betTypeName+"`) "+
-          "REFERENCES `ras_database`.`event` (`idevent`) "+
+          "REFERENCES `ras_database`.`evento` (`idevent`) "+
           "ON DELETE NO ACTION "+
           "ON UPDATE NO ACTION);"
 
@@ -530,6 +533,137 @@ var routesActions = {
         }
       })
     },
+
+    getBetTypeStructureBySport: async (req,res) =>{
+      var desportoID = req.body.desportoID
+      if (!desportoID) desportoID = 1
+      var resJson = '{ "estrutura": ['
+
+      // Selecionar todos os tipos de aposta do desporto
+      var query1 = "SELECT tipo_de_aposta FROM esportes_tipo_de_apostas WHERE esporte = "+desportoID
+
+      con.query(query1, async function(err,rows,fields){
+        var tamanhoRows = rows.length
+        var rowsIter = 1
+        for (const tipoDeAposta of rows){
+          var tipoDeApostaNome = tipoDeAposta["tipo_de_aposta"]
+          resJson = resJson + '{ "nome": "' + tipoDeApostaNome + '", "listaDeOdds": [ ' 
+
+          var query2 = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'"+tipoDeApostaNome+"'"
+        
+          var json = await helpers.writeOdd(query2)
+
+          resJson = resJson + json
+            
+          if (tamanhoRows == rowsIter)
+              resJson = resJson + ']}]'
+          else resJson = resJson = resJson + ']},'
+          rowsIter++
+        }
+
+        resJson = resJson + ' }'
+        res.status(200).json(JSON.parse(resJson))      
+      })
+    },
+
+    createTeam: (req,res) =>{
+      var nome = req.body.equipa 
+
+      var query = "INSERT INTO equipa (nome) VALUES ('"+nome+"')"
+
+      con.query(query, (err, rows) =>{
+        if (err){
+            console.log(err)
+            res.status(500).json({msg:"Erro ao criar equipa"})
+        }else{
+          res.status(200).json({msg:"Sucesso ao criar equipa"})
+        }
+      })  
+    },
+
+    createPlayer: (req,res) =>{
+      var nome = req.body.jogador 
+
+      var query = "INSERT INTO jogador (nome) VALUES ('"+nome+"')"
+
+      con.query(query, (err, rows) =>{
+        if (err){
+            console.log(err)
+            res.status(500).json({msg:"Erro ao criar jogador"})
+        }else{
+          res.status(200).json({msg:"Sucesso ao criar jogador"})
+        }
+      })  
+    },
+
+    getSportEventsColetive: async (req,res) => {
+      var sportID = req.body.sportID 
+      console.log(req.body)
+      if (!sportID) sportID = 1
+
+      // Listar todos os eventos do desporto
+      var eventos = await helpers.getEventosDoDesporto(sportID)
+      //console.log(eventos)
+
+      // Listar tipos de aposta do desporto
+      var tiposDeAposta = await helpers.getTiposDeApostaDoDesporto(sportID)
+      //console.log(tiposDeAposta)
+
+      // Listar equipas ou jogadores envolvidos no evento
+      var equipasEventos = []
+      for (var evento of eventos){
+        equipasEventos.push(await helpers.getEquipasDoEventoColetivo(evento["idevent"]))
+      }
+      
+      // Para cada evento, ir buscar as odds de cada tipo de aposta
+      var tiposDeApostasComOddsDeCadaEvento = []
+      for (var evento of eventos){
+        var eventoID = evento["idevent"]
+        //console.log("Indo buscar apostas do evento: "+ eventoID)
+        var tiposDeApostasComOdds = []
+        
+        for (var tipoDeAposta of tiposDeAposta){
+          tiposDeApostasComOdds.push(await helpers.getOddsTipoDeAposta(tipoDeAposta,eventoID))
+        }
+        //console.log(tiposDeApostasComOdds)
+        tiposDeApostasComOddsDeCadaEvento.push(tiposDeApostasComOdds)
+      }
+
+      //console.log(tiposDeApostasComOddsDeCadaEvento)
+      // construção da resposta
+      var resJson = {}
+      resJson["eventos"] = []
+      var iter = 0
+      for (var evento of eventos){
+        var eventoID = evento["idevent"]
+        var equipa1Nome = equipasEventos[iter]["equipa1Nome"]
+        var equipa2Nome = equipasEventos[iter]["equipa2Nome"]
+        var date = evento["date"]
+        var state = evento["state"]
+
+        var tiposDeApostaJson = []
+
+        var iter2 = 0
+        for (var tipoDeAposta of tiposDeApostasComOddsDeCadaEvento[iter]){
+          var listaDeOdds = []
+
+          for (var odd of tiposDeApostasComOddsDeCadaEvento[iter][iter2]){
+            listaDeOdds.push({nome:odd["nome"],valor:odd["valor"]})
+            //console.log(listaDeOdds)
+          }
+
+          tiposDeApostaJson.push({nome: tiposDeAposta[iter2], listaDeOdds:listaDeOdds})
+          iter2++
+        }
+        
+        var evento = {eventoID: eventoID, equipa1Nome: equipa1Nome, equipa2Nome: equipa2Nome, date: date, state: state, tipoDeApostas: tiposDeApostaJson}
+        resJson["eventos"][iter] = evento
+
+        iter++
+      }
+
+      res.status(200).json({eventos:resJson["eventos"]})
+    }
 }
 
 module.exports = routesActions
