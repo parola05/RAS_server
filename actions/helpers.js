@@ -153,6 +153,36 @@ var helpers = {
         }catch(err){
             console.log(err)
         }  
+    },
+
+    async createTeam(nomeEquipa){
+        const query = util.promisify(con.query).bind(con);
+
+        var query1 = "INSERT INTO equipa (nome) VALUES ('"+nomeEquipa+"')"
+        
+        try{
+            var rows = await query(query1)
+            return rows["insertId"]
+        } catch(err){
+            console.log(err)
+        }
+    },
+
+    async checkIfTeamExist(nomeEquipa){
+        const query = util.promisify(con.query).bind(con);
+
+        var query1 = "SELECT * FROM equipa WHERE nome = '"+nomeEquipa+"'"
+        
+        try{
+            var rows = await query(query1)
+            if (rows.length > 0){
+                return rows[0].idEquipa
+            }else{
+                return null
+            }
+        } catch(err){
+            console.log(err)
+        }
     }
 }
 
