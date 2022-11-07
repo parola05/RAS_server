@@ -4,7 +4,8 @@ const JWT = require('jsonwebtoken')
 const util = require('util');
 var async = require('async');
 var helpers = require('./helpers')
-var axios = require('axios')
+var axios = require('axios');
+const { read } = require('fs');
 
 var routesActions = {
     signup: (req,res) =>{
@@ -902,6 +903,41 @@ var routesActions = {
         }
       }
     }
+    },
+
+    getBuletin: async (req,res) =>{
+      var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
+      
+      var query = "SELECT * FROM buletin WHERE user_buletin = "+user.userID 
+
+      con.query(query, (err, rows) =>{
+        if (err){
+          console.log("Erro ao listar eventos do utilizador")
+          console.log(err)
+          res.status(500).json({msg:"Erro ao listar eventos do utilizador"})
+        }else{
+          res.status(200).json({boletins: rows})
+        }
+      })
+    },
+
+    getBetsByBuletin: async (req,res)=>{
+      //var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
+      var buletinID = req.body.buletinID
+
+      var apostasDoBoletim = await helpers.getApostasDoBoletim(buletinID)
+      
+      var resJson = []
+
+      for (var aposta of apostasDoBoletim){
+        var apostaJson = {}
+        apostaJson["oddSelected"] = aposta["odd_selected"]
+        apostaJson["evento"] = await helpers.getEquipasDoEventoColetivo(aposta["evento"]) 
+      
+        resJson.push(apostaJson)
+      }
+
+      res.status(200).json({apostas:resJson})
     },
 }
 

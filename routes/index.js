@@ -23,5 +23,7 @@ router.post('/eventos-desporto-coletivo',routesActions.getSportEventsColetive)
 router.get('/eventos-outras-casas',routesActions.getEventsOthers)
 router.post('/popular-eventos',routesActions.eventsPopulate)
 router.get('/utilizador',routesActions.getUserData)
+router.get('/boletim',routesActions.getBuletin)
+router.post('/apostas-do-boletim',routesActions.getBetsByBuletin)
 
 module.exports = router

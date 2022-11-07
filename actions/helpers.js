@@ -183,6 +183,23 @@ var helpers = {
         } catch(err){
             console.log(err)
         }
+    },
+
+    async getApostasDoBoletim(buletinID){
+        const query = util.promisify(con.query).bind(con);
+
+        var query1 = "SELECT * FROM bet WHERE buletin = "+buletinID
+        try{
+            console.log("Sucesso ao listar boletins da aposta")
+            var rows = await query(query1)
+            if (rows.length > 0){
+                return rows
+            }else{
+                return null
+            }
+        } catch(err){
+            console.log(err)
+        }
     }
 }
 
