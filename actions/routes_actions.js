@@ -182,32 +182,41 @@ var routesActions = {
     },
 
     createBuletin: (req,res) =>{
-       console.log(req.body)
+       //console.log(req.body)
 
        var bets = req.body.bets
-       var userID = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
+       var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
        var gain = req.body.gain 
        var type = req.body.type 
        var amount = req.body.amount
 
-       const query1 = "INSERT INTO buletin (amount, gain, , type, user) VALUES ("+amount+","+gain+",'"+type+"',"+userID.userID+")"
+       const query1 = "INSERT INTO buletin (amount, gain, type, user_buletin) VALUES ("+amount+","+gain+",'"+type+"',"+user.userID+")"
 
-       // Create a Buletin and all Bets related
+       // Cria o Boletim e todas as apostas relacionadas
        con.query(query1, function (err, result) {
         if (err){
           console.log(err)
+          console.log("Erro ao criar Boletim")
           res.status(500).json({msg:"Erro ao criar Boletim"})
         }else{
-          let buletinID = result.idbuletin
+          let buletinID = result.insertId
 
-          var query2 = "INSERT INTO bet (odd_selected,event,sport,buletin) VALUES "
+          var query2 = "INSERT INTO bet (odd_selected,evento,sport,buletin) VALUES "
 
-          for (const bet in bets){
+          var iter = 1
+          var betsSize = bets.length
+          for (const bet of bets){
             var event = bet.event 
             var oddSelected = bet.oddSelected
             var sport = bet.sport
 
-            query2 += "('"+odd_selected+"',"+event+",'"+sport+"',"+buletinID+"), " 
+            if (iter == betsSize){
+              query2 += "('"+oddSelected+"',"+event+",'"+sport+"',"+buletinID+"); " 
+            }else{
+              query2 += "('"+oddSelected+"',"+event+",'"+sport+"',"+buletinID+"), " 
+            }
+
+            iter++
           }
           
           con.query(query2, function (err, result) {
@@ -215,19 +224,19 @@ var routesActions = {
               console.log(err)
               res.status(500).json({msg:"Erro ao criar Apostas"})
             }else{
-              res.status(200).json({msg: "Sucesso ao adicionar Boletim"}) 
+              console.log("Sucesso ao criar apostas individuais")
             }
           })
         }
        })
-
-       console.log("Buletin created success, and all bets too")
-       const query3 = "SELECT balance FROM user WHERE iduser = "+user+""
+       
+       const query3 = "SELECT balance FROM user WHERE iduser = "+user.userID+""
       
        // create a bet transaction type and update user balance
        con.query(query3, (err, rows) => {
          if (err){
-             res.status(500).json({msg:"Erro ao selecionar utilizador"})
+          console.log("Erro ao selecionar utilizador")
+          res.status(500).json({msg:"Erro ao selecionar utilizador"})
          }else{
              if (rows.length!=0){
                  // Sucesso ao encontrar utilizador
@@ -235,24 +244,26 @@ var routesActions = {
                  var balance=rows[0]["balance"]
                  var newBalance = balance - amount
  
-                 var query4 = "UPDATE user SET balance = "+newBalance+" WHERE iduser = "+user+"" 
+                 var query4 = "UPDATE user SET balance = "+newBalance+" WHERE iduser = "+user.userID+"" 
  
                  con.query(query4, (err, rows) => {
                    if (err){
-                       res.status(500).json({msg:"Erro au atualizar saldo"})
+                    console.log("Erro ao atualizar saldo do utilizador")
+                    res.status(500).json({msg:"Erro ao atualizar saldo"})
                    }else{
                       // Sucesso ao atualizar saldo
 
                       var transactionType = "be"
-                      var currentDate = Date()
-                      var query5 = "INSERT INTO transaction (user, type, amount, date) VALUES ("+userID+",'"+transactionType+","+amount+","+currentDate+")"
+                      var query5 = "INSERT INTO transaction (user, type, amout) VALUES ("+user.userID+",'"+transactionType+"',"+amount+")"
                      
                       con.query(query5, (err, rows) => {
                        if (err){
-                           res.status(500).json({msg:"Erro ao criar transação"})
+                        console.log("Erro ao criar transação")
+                        res.status(500).json({msg:"Erro ao criar transação"})
                        }else{
-                          // Sucesso ao criar transação
-                          res.status(200).json({msg: "Sucesso ao criar transação"})  
+                        // Sucesso ao criar transação
+                        console.log("Sucesso ao criar transação")
+                        res.status(200).json({msg: "Sucesso ao criar transação"})  
                        }
                      })
                    }
@@ -262,19 +273,37 @@ var routesActions = {
        })
     },
 
-    deposit: (req,res) =>{
-      //console.log(req.body)
+    getUserData: (req,res) =>{
+      var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
 
-      var userID = req.body.userID 
+      var query1 = "SELECT * FROM user WHERE iduser = "+user.userID+""  
+
+      con.query(query1, (err, rows) => {
+        if (err){
+            res.status(500).json({msg:"Erro ao selecionar saldo do utilizador"})
+        }else{
+            if (rows.length!=0){
+                // Sucesso ao encontrar utilizador
+
+                var user=rows[0]
+                res.status(200).json({user:user})
+            }
+        }
+      })
+    },
+
+    deposit: (req,res) =>{
+
+      var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
       var amount = req.body.amount 
       var type = "de"
-      var date = req.body.date
 
-      var query1 = "SELECT balance FROM user WHERE iduser = "+userID+""
+      var query1 = "SELECT balance FROM user WHERE iduser = "+user.userID+""
       
       // Update user balance and create a new transaction
       con.query(query1, (err, rows) => {
         if (err){
+            console.log(err)
             res.status(500).json({msg:"Erro ao selecionar utilizador"})
         }else{
             if (rows.length!=0){
@@ -283,20 +312,23 @@ var routesActions = {
                 var balance=rows[0]["balance"]
                 var newBalance = balance + amount
 
-                var query2 = "UPDATE user SET balance = "+newBalance+" WHERE iduser = "+userID+"" 
+                var query2 = "UPDATE user SET balance = "+newBalance+" WHERE iduser = "+user.userID+"" 
 
                 con.query(query2, (err, rows) => {
                   if (err){
-                      res.status(500).json({msg:"Erro au atualizar saldo"})
+                    console.log(err)
+                    res.status(500).json({msg:"Erro ao atualizar saldo"})
                   }else{
                      // Sucesso ao atualizar saldo
-                     var query3 = "INSERT INTO transaction (user, type, amount, date) VALUES ("+userID+",'"+type+","+amount+","+date+")"
+                     var query3 = "INSERT INTO transaction (user, type, amout) VALUES ("+user.userID+",'"+type+"',"+amount+")"
                     
                      con.query(query3, (err, rows) => {
                       if (err){
+                          console.log(err)
                           res.status(500).json({msg:"Erro ao criar transação"})
                       }else{
                          // Sucesso ao criar transação
+                         console.log("Sucesso ao criar transação")
                          res.status(200).json({msg: "Sucesso ao criar transação"})  
                       }
                     })
@@ -310,17 +342,17 @@ var routesActions = {
     raise: (req,res) =>{
       //console.log(req.body)
 
-      var userID = req.body.userID 
+      var user = JWT.verify(req.header('authorization').substring(7), "Rasbet");
       var amount = req.body.amount 
       var type = "ra"
-      var date = req.body.date
 
-      var query1 = "SELECT balance FROM user WHERE iduser = "+userID+""
+      var query1 = "SELECT balance FROM user WHERE iduser = "+user.userID+""
       
       // Update user balance and create a new transaction
       con.query(query1, (err, rows) => {
         if (err){
-            res.status(500).json({msg:"Erro ao selecionar utilizador"})
+          console.log(err)
+          res.status(500).json({msg:"Erro ao selecionar utilizador"})
         }else{
             if (rows.length!=0){
                 // Sucesso ao encontrar utilizador
@@ -328,20 +360,22 @@ var routesActions = {
                 var balance=rows[0]["balance"]
                 var newBalance = balance - amount
 
-                var query2 = "UPDATE user SET balance = "+newBalance+" WHERE iduser = "+userID+"" 
+                var query2 = "UPDATE user SET balance = "+newBalance+" WHERE iduser = "+user.userID+"" 
 
                 con.query(query2, (err, rows) => {
                   if (err){
                       res.status(500).json({msg:"Erro au atualizar saldo"})
                   }else{
                      // Sucesso ao atualizar saldo
-                     var query3 = "INSERT INTO transaction (user, type, amount, date) VALUES ("+userID+",'"+type+","+amount+","+date+")"
+                     var query3 = "INSERT INTO transaction (user, type, amout) VALUES ("+user.userID+",'"+type+"',"+amount+")"
                     
                      con.query(query3, (err, rows) => {
                       if (err){
-                          res.status(500).json({msg:"Erro ao criar transação"})
+                        console.log(err)
+                        res.status(500).json({msg:"Erro ao criar transação"})
                       }else{
                          // Sucesso ao criar transação
+                         console.log("Sucesso ao criar transação")
                          res.status(200).json({msg: "Sucesso ao criar transação"})  
                       }
                     })
@@ -599,7 +633,7 @@ var routesActions = {
 
     getSportEventsColetive: async (req,res) => {
       var sportID = req.body.sportID 
-      console.log(req.body)
+      //console.log(req.body)
       if (!sportID) sportID = 1
 
       // Listar todos os eventos do desporto
@@ -615,7 +649,7 @@ var routesActions = {
       for (var evento of eventos){
         equipasEventos.push(await helpers.getEquipasDoEventoColetivo(evento["idevent"]))
       }
-      console.log(equipasEventos)
+      //console.log(equipasEventos)
       
       // Para cada evento, ir buscar as odds de cada tipo de aposta
       var tiposDeApostasComOddsDeCadaEvento = []
@@ -633,7 +667,6 @@ var routesActions = {
 
       //console.log(tiposDeApostasComOddsDeCadaEvento)
       // construção da resposta
-      
       var resJson = {}
       resJson["eventos"] = []
       var iter = 0
@@ -665,7 +698,6 @@ var routesActions = {
         iter++
       }
       
-
       res.status(200).json({eventos:resJson["eventos"]})
     },
 

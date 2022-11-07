@@ -97,7 +97,7 @@ var helpers = {
                     for (const equipa of rows){
                         equipasNomes["equipa2Nome"] = equipa["nome"]
                     } 
-
+                    //console.log("Nomes equipas: ",equipasNomes)
                     return equipasNomes
                 }catch(err){
                     
