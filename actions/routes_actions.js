@@ -573,32 +573,39 @@ var routesActions = {
     getBetTypeStructureBySport: async (req,res) =>{
       var desportoID = req.body.desportoID
       if (!desportoID) desportoID = 1
-      var resJson = '{ "estrutura": ['
+      console.log(desportoID)
+      //var resJson = '{ "estrutura": ['
+      var listaTipoDeApostas = []
 
       // Selecionar todos os tipos de aposta do desporto
       var query1 = "SELECT tipo_de_aposta FROM esportes_tipo_de_apostas WHERE esporte = "+desportoID
 
       con.query(query1, async function(err,rows,fields){
-        var tamanhoRows = rows.length
-        var rowsIter = 1
+        //var tamanhoRows = rows.length
+        //var rowsIter = 1
         for (const tipoDeAposta of rows){
+          var tipoDeApostaJson = {}
+          var listaDeOddsJson = []
           var tipoDeApostaNome = tipoDeAposta["tipo_de_aposta"]
-          resJson = resJson + '{ "nome": "' + tipoDeApostaNome + '", "listaDeOdds": [ ' 
+          tipoDeApostaJson["nome"] = tipoDeApostaNome
+          //resJson = resJson + '{ "nome": "' + tipoDeApostaNome + '", "listaDeOdds": [ ' 
 
           var query2 = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'"+tipoDeApostaNome+"'"
         
-          var json = await helpers.writeOdd(query2)
+          var listaDeOdds = await helpers.writeOdd(query2)
 
-          resJson = resJson + json
+          tipoDeApostaJson["listaDeOdds"] = listaDeOdds
+          //resJson = resJson + json
             
-          if (tamanhoRows == rowsIter)
-              resJson = resJson + ']}]'
-          else resJson = resJson = resJson + ']},'
-          rowsIter++
+          //if (tamanhoRows == rowsIter)
+          //    resJson = resJson + ']}]'
+          //else resJson = resJson = resJson + ']},'
+          //rowsIter++
+          listaTipoDeApostas.push(tipoDeApostaJson)
         }
 
-        resJson = resJson + ' }'
-        res.status(200).json(JSON.parse(resJson))      
+        //resJson = resJson + ' }'
+        res.status(200).json({estrutura: listaTipoDeApostas})      
       })
     },
 

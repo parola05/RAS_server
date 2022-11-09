@@ -5,15 +5,20 @@ var helpers = {
 
     async writeOdd(query2){
         const query = util.promisify(con.query).bind(con);
-        var resJson = ""
+        //var resJson = ""
+        var listaDeOdds = []
 
         try{
             var rows = await query(query2)
-            var tamanhoRows = rows.length - 2
-            var iter = 1
+            //var tamanhoRows = rows.length - 2
+            //var iter = 1
             for (const coluna of rows){
                 var nomeColuna = coluna["COLUMN_NAME"]
                 if(nomeColuna.substring(0,2) != "id" && nomeColuna.substring(0,6) != "evento"){
+                    var odd = {}
+                    odd["nome"] = nomeColuna
+                    odd["odd"] = -1
+                    /*
                     if (iter == tamanhoRows){
                         resJson = resJson + '{ "nome": "' + nomeColuna + '", "odd": -1 }'
                     }
@@ -21,12 +26,14 @@ var helpers = {
                         resJson = resJson + '{ "nome": "' + nomeColuna + '", "odd": -1 },'
                     }
                     iter++
+                    */
+                   listaDeOdds.push(odd)
                 }
             }
         }catch(err){
             console.log(err)
         }
-        return resJson
+        return listaDeOdds
     },
 
     async getEventosDoDesporto(sportID){
