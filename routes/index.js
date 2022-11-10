@@ -4,6 +4,7 @@ const router = express.Router()
 
 router.put('/user',routesActions.signup)
 router.post('/user',routesActions.login)
+router.put('/changeProfile',routesActions.changeProfile)
 router.put('/soccer-event',routesActions.createSoccerEvent)
 router.put('/basket-event',routesActions.createBasketEvent)
 router.get('/soccer-event',routesActions.getSoccerEvents)
@@ -25,5 +26,6 @@ router.post('/popular-eventos',routesActions.eventsPopulate)
 router.get('/utilizador',routesActions.getUserData)
 router.get('/boletim',routesActions.getBuletin)
 router.post('/apostas-do-boletim',routesActions.getBetsByBuletin)
+
 
 module.exports = router

@@ -67,6 +67,29 @@ var routesActions = {
       })
     },
 
+    changeProfile: (req,res) =>{
+      //console.log(req.body)
+      var username = req.body.username 
+      var password = req.body.password 
+      var email = req.body.email 
+      var nif = req.body.nif  
+      var iban = req.body.iban 
+      var birthday = req.body.birthday
+
+      var passwordHash = bcrypt.hashSync(password, 10);
+
+      const query = "UPDATE user (username, password, email, nif, iban, birthday, credential) SET username = "+username+", nif = "+nif+", iban = "+iban+", birthday = "+birthday+", password = "+passwordHash+" WHERE email = "+email+""
+
+      con.query(query, function (err, result) {
+        if (err){
+          console.log(err)
+          res.status(400).json({msg:"Já existe utilizador com este nome"})
+        }else{
+          res.status(200).json({msg: "Sucesso ao adicionar utilizador"})  
+        }
+      });    
+  },
+
     createSoccerEvent: (req,res) =>{
         console.log(req.body)
 
