@@ -4,6 +4,7 @@ const cors = require('cors')
 const routes = require('./routes/index')
 const userRoutes = require('./routes/UserRoutes')
 const eventRoutes = require('./routes/EventRoutes')
+const betRoutes = require('./routes/BetRoutes')
 const db = require('./config/db.js')
 
 const app = express()
@@ -23,6 +24,7 @@ app.use(bodyParser.urlencoded({extended:true}))
 app.use(routes)
 app.use('/user',userRoutes)
 app.use('/event',eventRoutes)
+app.use('/bet',betRoutes)
 
 app.listen(3000,()=>{
     console.log("Server running on port 3000")

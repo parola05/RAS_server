@@ -40,4 +40,48 @@ module.exports = {
             throw Error("Erro em conectar com base de dados") 
         }
     },
+
+    async getUserData(userID){
+  
+        var query1 = "SELECT * FROM user WHERE iduser = "+userID+""  
+  
+        try{
+            var rows = await query(query1)
+            return rows[0]
+        }catch(err){
+            console.log(err)
+            throw Error("Erro em conectar com base de dados") 
+        }
+    },
+
+    async setUserBalance(newBalance,userID){
+        var query1 = "UPDATE user SET balance = "+newBalance+" WHERE iduser = "+userID+""
+
+        try{
+            await query(query1)
+        }catch(err){
+            throw Error("Erro em conectar com base de dados") 
+        }
+    },
+
+    async addUserTransaction(transactionType,amount,userID){
+        var query1 = "INSERT INTO transaction (user, type, amout) VALUES ("+userID+",'"+transactionType+"',"+amount+")" 
+        
+         try{
+            await query(query1)
+        }catch(err){
+            throw Error("Erro em conectar com base de dados") 
+        }
+    },
+
+    async getUserTransactions(userID){
+        const query1 = "SELECT type, date, amout FROM transaction WHERE user = "+userID+""
+        
+         try{
+            const rows = await query(query1)
+            return rows
+        }catch(err){
+            throw Error("Erro em conectar com base de dados") 
+        }
+    }
 }

@@ -1,4 +1,5 @@
 var UserModel = require('../models/UserModel')
+const JWT = require('jsonwebtoken')
 
 module.exports = {
     async getUsers(req,res){
@@ -40,5 +41,28 @@ module.exports = {
         }catch(error){
             res.status(400).json({msg:error})
         }
-    }
+    },
+
+    async getUserData(req,res){
+        var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
+
+        try{
+            var data = await UserModel.getUserData(user.userID)
+            console.log(data)
+            res.status(200).json({user:data})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
+
+    async getUserTransactions(req,res){
+        var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
+
+        try{
+            var data = await UserModel.getUserTransactions(user.userID)
+            res.status(200).json({transactions:data})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
 }

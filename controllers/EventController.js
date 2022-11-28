@@ -38,6 +38,7 @@ module.exports = {
 
         if (!name) {
             res.status(400).json({msg:"erro na requisição"})
+            return
         }
 
         try{
@@ -62,4 +63,245 @@ module.exports = {
             res.status(400).json({msg:error})
         }
     },
+
+    async getTeams(req,res){
+        try{
+            var teams = await EventModel.getTeams()
+            res.status(200).json({teams:teams})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
+
+    async getPlayers(req,res){
+        try{
+            var players = await EventModel.getPlayers()
+            res.status(200).json({players:players})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
+
+    async addEventColetive(req,res){
+        
+        var equipa1ID = req.body.equipa1ID
+        var equipa2ID = req.body.equipa2ID 
+        var desportoID = req.body.desportoID 
+        var data = req.body.data 
+        var tipoDeApostas = req.body.tipoDeApostas
+
+        if(!equipa1ID || !equipa2ID || !desportoID || !data || !tipoDeApostas) {
+            res.status(400).json({msg:"erro na requisição"})
+            return 
+        }
+
+        try{
+            console.log("Indo criar evento!")
+            const eventID = await EventModel.addEvent(data,desportoID)
+            
+            console.log("Indo criar participantes!")
+            await EventModel.addColetiveSportParticipants(equipa1ID,equipa2ID,eventID)
+
+            console.log("Indo criar tipos de apostas!")
+            await tipoDeApostas.forEach(async (tipoDeAposta) => {
+                await EventModel.addBetType(tipoDeAposta["nome"],tipoDeAposta["oddList"],eventID)
+            })
+
+            res.status(200)
+        }catch(error){
+            console.log(error)
+            res.status(400).json({msg:error})
+        }
+    },
+
+    async addEventDual(req,res){
+        
+        var jogador1ID = req.body.jogador1ID
+        var jogador2ID = req.body.jogador2ID 
+        var desportoID = req.body.desportoID 
+        var data = req.body.data 
+        var tipoDeApostas = req.body.tipoDeApostas
+
+        if(!jogador1ID || !jogador2ID || !desportoID || !data || !tipoDeApostas) {
+            res.status(400).json({msg:"erro na requisição"})
+            return 
+        }
+
+        try{
+            console.log("Indo criar evento!")
+            const eventID = await EventModel.addEvent(data,desportoID)
+            
+            console.log("Indo criar participantes!")
+            await EventModel.addDualSportParticipants(jogador1ID,jogador2ID,eventID)
+
+            console.log("Indo criar tipos de apostas!")
+            await tipoDeApostas.forEach(async (tipoDeAposta) => {
+                await EventModel.addBetType(tipoDeAposta["nome"],tipoDeAposta["oddList"],eventID)
+            })
+
+            res.status(200)
+        }catch(error){
+            console.log(error)
+            res.status(400).json({msg:error})
+        }
+    },
+
+    async createBetType(req,res){
+        console.log(req.body)
+        var betTypeName = req.body.betTypeName
+        var oddNames = req.body.oddNames
+        var sportsID = req.body.sportsID
+  
+        if(!betTypeName || !oddNames || !sportsID) {
+            res.status(400).json({msg:"erro na requisição"})
+            return 
+        }
+
+        try{
+            await EventModel.createBetType(betTypeName,oddNames)
+            await EventModel.addBetTypeToSports(sportsID,betTypeName)
+            res.status(200)
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
+
+    async getEventsBySport(req,res){
+        var sportID = req.body.sportID 
+
+        if(!sportID) {
+            res.status(400).json({msg:"erro na requisição"})
+            return 
+        }
+
+        var eventos = await EventModel.getEventsBySport(sportID)
+        
+        var tiposDeAposta = await EventModel.getBetTypeBySport(sportID)
+
+        var sportType = await EventModel.getSportType(sportID)
+
+
+        if(sportType == "c"){
+
+            var equipasEventos = []
+            for (var evento of eventos){
+                equipasEventos.push(await EventModel.getTeamsFromColetiveEvent(evento["idevent"]))
+            }
+
+            var tiposDeApostasComOddsDeCadaEvento = []
+            for (var evento of eventos){
+                var eventoID = evento["idevent"]
+     
+                var tiposDeApostasComOdds = []
+                
+                for (var tipoDeAposta of tiposDeAposta){
+                    tiposDeApostasComOdds.push(await EventModel.getOddsTipoDeAposta(tipoDeAposta,eventoID))
+                }
+        
+                tiposDeApostasComOddsDeCadaEvento.push(tiposDeApostasComOdds)
+                console.log(tiposDeApostasComOdds)
+            }
+
+
+            var resJson = {}
+            resJson["eventos"] = []
+            var iter = 0
+            for (var evento of eventos){
+              var eventoID = evento["idevent"]
+              var equipa1Nome = equipasEventos[iter]["equipa1Nome"]
+              var equipa2Nome = equipasEventos[iter]["equipa2Nome"]
+              var date = evento["date"]
+              var state = evento["state"]
+              var sport = evento["sport"]
+      
+              var tiposDeApostaJson = []
+      
+              var iter2 = 0
+              for (var tipoDeAposta of tiposDeApostasComOddsDeCadaEvento[iter]){
+                var listaDeOdds = []
+      
+                for (var odd of tiposDeApostasComOddsDeCadaEvento[iter][iter2]){
+                  listaDeOdds.push({nome:odd["nome"],valor:odd["valor"]})
+                  //console.log(listaDeOdds)
+                }
+      
+                tiposDeApostaJson.push({nome: tiposDeAposta[iter2], listaDeOdds:listaDeOdds})
+                iter2++
+              }
+              
+              var evento = {eventoID: eventoID, sportID: sport, equipa1Nome: equipa1Nome, equipa2Nome: equipa2Nome, date: date, state: state, tipoDeApostas: tiposDeApostaJson}
+              resJson["eventos"][iter] = evento
+      
+              iter++
+            }
+            
+            res.status(200).json({eventos:resJson["eventos"]})
+      
+        }else if(sportType == "d"){
+            var jogadoresEventos = []
+            for (var evento of eventos){
+                jogadoresEventos.push(await EventModel.getPlayersFromDualEvent(evento["idevent"]))
+            }
+            
+            var tiposDeApostasComOddsDeCadaEvento = []
+            for (var evento of eventos){
+                var eventoID = evento["idevent"]
+     
+                var tiposDeApostasComOdds = []
+                
+                for (var tipoDeAposta of tiposDeAposta){
+                    tiposDeApostasComOdds.push(await EventModel.getOddsTipoDeAposta(tipoDeAposta,eventoID))
+                }
+        
+                tiposDeApostasComOddsDeCadaEvento.push(tiposDeApostasComOdds)
+                console.log(tiposDeApostasComOdds)
+            }
+
+
+            var resJson = {}
+            resJson["eventos"] = []
+            var iter = 0
+            for (var evento of eventos){
+              var eventoID = evento["idevent"]
+              var jogador1Nome = jogadoresEventos[iter]["jogador1Nome"]
+              var jogador2Nome = jogadoresEventos[iter]["jogador2Nome"]
+              var date = evento["date"]
+              var state = evento["state"]
+              var sport = evento["sport"]
+      
+              var tiposDeApostaJson = []
+      
+              var iter2 = 0
+              for (var tipoDeAposta of tiposDeApostasComOddsDeCadaEvento[iter]){
+                var listaDeOdds = []
+      
+                for (var odd of tiposDeApostasComOddsDeCadaEvento[iter][iter2]){
+                  listaDeOdds.push({nome:odd["nome"],valor:odd["valor"]})
+                  //console.log(listaDeOdds)
+                }
+      
+                tiposDeApostaJson.push({nome: tiposDeAposta[iter2], listaDeOdds:listaDeOdds})
+                iter2++
+              }
+              
+              var evento = {eventoID: eventoID, sportID: sport,jogador1Nome: jogador1Nome, jogador2Nome: jogador2Nome, date: date, state: state, tipoDeApostas: tiposDeApostaJson}
+              resJson["eventos"][iter] = evento
+      
+              iter++
+            }
+            
+            res.status(200).json({eventos:resJson["eventos"]})
+        }else if(sportType == "i"){
+
+        }    
+    },
+
+    async getSports(req,res){
+        try{
+            var sports = await EventModel.getSports()
+            res.status(200).json({esportes:sports})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }    
+    }
 }
