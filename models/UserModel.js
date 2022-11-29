@@ -162,5 +162,16 @@ module.exports = {
              console.log(err) 
              throw Error("Erro em conectar com base de dados") 
          }
+    },
+
+    async getEventPromotion(eventID){
+        const query1 = "SELECT * FROM promotion WHERE eventIDPromotion = "+eventID
+        
+        try{
+           const rows = await query(query1)
+           return rows[0]
+       }catch(err){
+           throw Error("Erro em conectar com base de dados") 
+       }    
     }
 }

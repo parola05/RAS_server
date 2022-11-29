@@ -199,9 +199,7 @@ module.exports = {
         }
 
         var eventos = await EventModel.getEventsBySport(sportID)
-        
         var tiposDeAposta = await EventModel.getBetTypeBySport(sportID)
-
         var sportType = await EventModel.getSportType(sportID)
 
 
@@ -223,7 +221,7 @@ module.exports = {
                 }
         
                 tiposDeApostasComOddsDeCadaEvento.push(tiposDeApostasComOdds)
-                console.log(tiposDeApostasComOdds)
+                //console.log(tiposDeApostasComOdds)
             }
 
 
@@ -232,6 +230,7 @@ module.exports = {
             var iter = 0
             for (var evento of eventos){
               var eventoID = evento["idevent"]
+              var promotion = await UserModel.getEventPromotion(eventoID)
               var equipa1Nome = equipasEventos[iter]["equipa1Nome"]
               var equipa2Nome = equipasEventos[iter]["equipa2Nome"]
               var date = evento["date"]
@@ -253,7 +252,7 @@ module.exports = {
                 iter2++
               }
               
-              var evento = {eventoID: eventoID, sportID: sport, equipa1Nome: equipa1Nome, equipa2Nome: equipa2Nome, date: date, state: state, tipoDeApostas: tiposDeApostaJson}
+              var evento = {eventoID: eventoID, sportID: sport, equipa1Nome: equipa1Nome, equipa2Nome: equipa2Nome, date: date, state: state, tipoDeApostas: tiposDeApostaJson,promotion:promotion}
               resJson["eventos"][iter] = evento
       
               iter++
@@ -287,6 +286,7 @@ module.exports = {
             var iter = 0
             for (var evento of eventos){
               var eventoID = evento["idevent"]
+              var promotion = await UserModel.getEventPromotion(eventoID)
               var jogador1Nome = jogadoresEventos[iter]["jogador1Nome"]
               var jogador2Nome = jogadoresEventos[iter]["jogador2Nome"]
               var date = evento["date"]
@@ -308,7 +308,7 @@ module.exports = {
                 iter2++
               }
               
-              var evento = {eventoID: eventoID, sportID: sport,jogador1Nome: jogador1Nome, jogador2Nome: jogador2Nome, date: date, state: state, tipoDeApostas: tiposDeApostaJson}
+              var evento = {eventoID: eventoID, sportID: sport,jogador1Nome: jogador1Nome, jogador2Nome: jogador2Nome, date: date, state: state, tipoDeApostas: tiposDeApostaJson, promotion:promotion}
               resJson["eventos"][iter] = evento
       
               iter++
@@ -316,7 +316,7 @@ module.exports = {
             
             res.status(200).json({eventos:resJson["eventos"]})
         }else if(sportType == "i"){
-
+            // TODO
         }    
     },
 
