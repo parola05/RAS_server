@@ -19,6 +19,28 @@ module.exports = {
         }
     },
 
+    async suspendEvent(req,res){
+        var suspendText = req.body.suspendText 
+        var eventID = req.body.eventID  
+
+        if (!suspendText || !eventID) {
+            res.status(400).json({msg:"erro na requisição"})
+        }
+
+        try{
+            console.log("Indo alterar estado")
+            await EventModel.setEventState("s",eventID)
+            console.log("Indo criar notificação")
+            await UserModel.addAllUsersNotification(
+                "Evento suspenso",
+                suspendText
+            )
+            res.status(200)
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
+
     async addSport(req,res){
         var name = req.body.name 
         var type = req.body.type  

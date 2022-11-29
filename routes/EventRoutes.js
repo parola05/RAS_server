@@ -3,6 +3,7 @@ const router = express.Router()
 var controller = require('../controllers/EventController')
 
 router.post('/state',controller.setEventState)
+router.post('/suspend',controller.suspendEvent)
 router.post('/sport',controller.addSport)
 router.post('/team',controller.addTeam)
 router.post('/player',controller.addPlayer)
