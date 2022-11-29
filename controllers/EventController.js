@@ -326,6 +326,7 @@ module.exports = {
                     const buletinType = await EventModel.getBuletinType(betFromEvent.buletin)
                 
                     if(buletinType == "m"){
+                        console.log("Indo checkar se o boletim múltiplo foi concluído com sucesso")
                         const buletinSuccess = await EventModel.checkIfBuletinMSuccess(betFromEvent.buletin)
 
                         if(buletinSuccess){
@@ -342,11 +343,25 @@ module.exports = {
                             console.log("Indo criar notificação")
                             await UserModel.addUserNotification(
                                 "Ganho de aposta",
-                                "Parabéns, você ganhou uma aposta! " + buletinGain + " foi despositado na sua conta!",
+                                "Parabéns, você ganhou uma aposta! " + buletinGain + "$ foi despositado na sua conta!",
                                 userFromBuletin
                             )
                         }
                     }else if(buletinType == "s"){
+                        console.log("Indo pegar utilizador do boletim!")
+                        const userFromBuletin = await EventModel.getUserFromBuletin(betFromEvent.buletin) 
+                        console.log("Indo pegar saldo do utilizador")
+                        const userBalance =  (await UserModel.getUserData(userFromBuletin)).balance 
+                        console.log("Indo atualizar saldo do utilizador")
+                        await UserModel.setUserBalance(userBalance + betFromEvent.gain,userFromBuletin)
+                        console.log("Indo criar transação")
+                        await UserModel.addUserTransaction("ga",betFromEvent.gain,userFromBuletin)
+                        console.log("Indo criar notificação")
+                        await UserModel.addUserNotification(
+                            "Ganho de aposta",
+                            "Parabéns, você ganhou uma aposta! " + betFromEvent.gain + "$ foi despositado na sua conta!",
+                            userFromBuletin
+                        )
                     }
                 }else{
                     await EventModel.setBetState(betFromEvent.idbet,"n")

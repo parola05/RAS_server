@@ -15,23 +15,47 @@ module.exports = {
         }
     },
 
-    async addBetsFromBuletin(bets,buletinID){
-        var query1 = "INSERT INTO bet (odd_selected,evento,sport,buletin) VALUES "
+    async addBetsFromBuletin(bets,buletinID,buletinType){
+        var query1 = ""
 
-        var iter = 1
-        var betsSize = bets.length
-        for (const bet of bets){
-            var event = bet.event 
-            var oddSelected = bet.oddSelected
-            var sport = bet.sport
+        if(buletinType == "m"){
+            query1 = "INSERT INTO bet (odd_selected,evento,sport,buletin) VALUES "
 
-            if (iter == betsSize){
-              query1 += "('"+oddSelected+"',"+event+",'"+sport+"',"+buletinID+"); " 
-            }else{
-              query1 += "('"+oddSelected+"',"+event+",'"+sport+"',"+buletinID+"), " 
+            var iter = 1
+            var betsSize = bets.length
+            for (const bet of bets){
+                var event = bet.event 
+                var oddSelected = bet.oddSelected
+                var sport = bet.sport
+
+                if (iter == betsSize){
+                    query1 += "('"+oddSelected+"',"+event+",'"+sport+"',"+buletinID+"); " 
+                }else{
+                    query1 += "('"+oddSelected+"',"+event+",'"+sport+"',"+buletinID+"), " 
+                }
+
+                iter++
             }
+        }else{
+            query1 = "INSERT INTO bet (odd_selected,evento,sport,buletin,amount,gain) VALUES "
 
-            iter++
+            var iter = 1
+            var betsSize = bets.length
+            for (const bet of bets){
+                var event = bet.event 
+                var oddSelected = bet.oddSelected
+                var sport = bet.sport
+                var gain = bet.gain 
+                var amount = bet.amount
+
+                if (iter == betsSize){
+                    query1 += "('"+oddSelected+"',"+event+",'"+sport+"',"+buletinID+","+amount+","+gain+"); " 
+                }else{
+                    query1 += "('"+oddSelected+"',"+event+",'"+sport+"',"+buletinID+","+amount+","+gain+"), " 
+                }
+
+                iter++
+            }
         }
           
         try{

@@ -20,8 +20,11 @@ module.exports = {
         try{
             console.log("Indo adicionar Boletim vazio!")
             const buletinID = await BetModel.addBuletin(amount,gain,type,user.userID)
+            console.log("Indo pegar tipo do boletim!")
+            const buletinType = await EventModel.getBuletinType(buletinID)
+            console.log("Tipo ",buletinType)
             console.log("Indo adicionar apostas do boletim!")
-            await BetModel.addBetsFromBuletin(bets,buletinID)
+            await BetModel.addBetsFromBuletin(bets,buletinID,buletinType)
             console.log("Indo pegar saldo do utilizador")
             var userBalance =  (await UserModel.getUserData(user.userID)).balance 
             console.log(userBalance)

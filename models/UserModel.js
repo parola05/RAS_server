@@ -71,6 +71,7 @@ module.exports = {
         try{
             await query(query1)
         }catch(err){
+            console.log(err)
             throw Error("Erro em conectar com base de dados") 
         }
     },
