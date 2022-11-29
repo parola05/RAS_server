@@ -13,5 +13,8 @@ router.post('/dual',controller.addEventDual)
 router.post('/betType',controller.createBetType)
 router.post('/eventsBySport',controller.getEventsBySport)
 router.get('/sport',controller.getSports)
+router.post('/addResult',controller.addResult)
+router.post('/betTypeStructure',controller.getBetTypeStructureBySport)
+router.get('/eventsOthersHouses',controller.getEventsOthersHouses)
 
 module.exports = router

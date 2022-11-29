@@ -356,5 +356,125 @@ module.exports = {
         }catch(err){
             console.log(err)
         }     
+    },
+
+    async getBetsWaitingFromEvent(eventID){
+        var query1 = "SELECT * FROM bet WHERE state = 'a' AND evento = "+eventID
+
+        try{
+            var rows = await query(query1)
+            return rows
+        }catch(error){
+            console.log(err)
+        }
+    },
+
+    checkIfBetHappens(odd_selected,betTypeList){
+        var happen = false 
+
+        for(const betType of betTypeList){
+            for(const odd of betType.oddList){
+                if (odd_selected == odd.nome && odd.odd == 1){
+                    happen = true
+                }
+            }
+        }
+
+        return happen 
+    },
+
+    async getBuletinType(buletinID){
+        var query1 = "SELECT type FROM buletin WHERE idbuletin = "+buletinID
+
+        try{
+            var rows = await query(query1)
+            return rows[0]["type"]
+        }catch(error){
+            console.log(err)
+        }
+    },
+
+    async setBetState(betID,state){
+        const query1 = "UPDATE bet SET state = '"+state+"' WHERE idbet = '"+betID+"';"
+
+        try{
+            await query(query1)
+        }catch(err){
+            throw Error("Erro em conectar com base de dados") 
+        }    
+    },
+
+    async checkIfBuletinMSuccess(buletinID){
+        var success = true  
+        var query1 = "SELECT state FROM bet WHERE buletin = "+buletinID
+
+        try{
+            var rows = await query(query1)
+            for(const row of rows){
+                if (row.state != "h"){
+                    success = false
+                }
+            }
+
+            return success
+        }catch(error){
+            console.log(err)
+        }    
+    },
+
+    async getUserFromBuletin(buletinID){
+        var query1 = "SELECT user_buletin FROM buletin WHERE idbuletin = "+buletinID
+
+        try{
+            var rows = await query(query1)
+            return rows[0]["user_buletin"]
+        }catch(error){
+            console.log(err)
+        }   
+    },
+
+    async getBuletinGain(buletinID){
+        var query1 = "SELECT gain FROM buletin WHERE idbuletin = "+buletinID
+
+        try{
+            var rows = await query(query1)
+            return rows[0]["gain"]
+        }catch(error){
+            console.log(err)
+        }    
+    },
+
+    async getBetTypesBySport(sportID){
+        var query1 = "SELECT tipo_de_aposta FROM esportes_tipo_de_apostas WHERE esporte = "+sportID
+
+        try{
+            var rows = await query(query1)
+            return rows
+        }catch(error){
+            console.log(err)
+        }
+    },
+
+    async getOddListFromBetType(betTypeName){
+        var query1 = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'"+betTypeName+"'"
+
+        var listaDeOdds = []
+
+        try{
+            var rows = await query(query1)
+            for (const coluna of rows){
+                var nomeColuna = coluna["COLUMN_NAME"]
+                if(nomeColuna.substring(0,2) != "id" && nomeColuna.substring(0,6) != "evento"){
+                    var odd = {}
+                    odd["nome"] = nomeColuna
+                    odd["odd"] = -1
+                    listaDeOdds.push(odd)
+                }
+            }
+
+            return listaDeOdds
+        }catch(err){
+            console.log(err)
+        }
     }
 }

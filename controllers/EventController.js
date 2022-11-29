@@ -1,4 +1,6 @@
 var EventModel = require('../models/EventModel')
+var UserModel = require('../models/UserModel')
+var axios = require('axios');
 
 module.exports = {
     async setEventState(req,res){
@@ -303,5 +305,144 @@ module.exports = {
         }catch(error){
             res.status(400).json({msg:error})
         }    
+    },
+
+    async addResult(req,res){
+        const eventID = req.body.eventID
+        const betTypeList = req.body.betTypeList 
+        
+        if(!eventID || !betTypeList){
+            res.status(400).json({msg:"erro na requisição"})   
+        }
+
+        try{
+            const betsFromEvent = await EventModel.getBetsWaitingFromEvent(eventID)
+            
+            for(const betFromEvent of betsFromEvent){
+                const betHappens = EventModel.checkIfBetHappens(betFromEvent.odd_selected,betTypeList)
+
+                if(betHappens){
+                    await EventModel.setBetState(betFromEvent.idbet,"h")
+                    const buletinType = await EventModel.getBuletinType(betFromEvent.buletin)
+                
+                    if(buletinType == "m"){
+                        const buletinSuccess = await EventModel.checkIfBuletinMSuccess(betFromEvent.buletin)
+
+                        if(buletinSuccess){
+                            console.log("Indo pegar utilizador do boletim!")
+                            const userFromBuletin = await EventModel.getUserFromBuletin(betFromEvent.buletin) 
+                            console.log("Indo pegar saldo do utilizador")
+                            const userBalance =  (await UserModel.getUserData(userFromBuletin)).balance 
+                            console.log("Indo pegar ganho total do boletim")
+                            const buletinGain = await EventModel.getBuletinGain(betFromEvent.buletin) 
+                            console.log("Indo atualizar saldo do utilizador")
+                            await UserModel.setUserBalance(userBalance + buletinGain,userFromBuletin)
+                            console.log("Indo criar transação")
+                            await UserModel.addUserTransaction("ga",buletinGain,userFromBuletin)
+                            console.log("Indo criar notificação")
+                            await UserModel.addUserNotification(
+                                "Ganho de aposta",
+                                "Parabéns, você ganhou uma aposta! " + buletinGain + " foi despositado na sua conta!",
+                                userFromBuletin
+                            )
+                        }
+                    }else if(buletinType == "s"){
+                    }
+                }else{
+                    await EventModel.setBetState(betFromEvent.idbet,"n")
+                }
+            }
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
+
+    async getBetTypeStructureBySport(req,res){
+        listaTipoDeApostas = []
+        var sportID = req.body.desportoID
+
+        if(!sportID){
+            res.status(400).json({msg:"erro na requisição"})   
+        }
+
+        try{
+            const betTypes = await EventModel.getBetTypeBySport(sportID)
+            
+            for (const tipoDeAposta of betTypes){
+
+                var tipoDeApostaJson = {}
+                tipoDeApostaJson["nome"] = tipoDeAposta
+              
+                var listaDeOdds = await EventModel.getOddListFromBetType(tipoDeAposta)
+      
+                tipoDeApostaJson["listaDeOdds"] = listaDeOdds
+
+                listaTipoDeApostas.push(tipoDeApostaJson)
+            }
+
+            res.status(200).json({estrutura: listaTipoDeApostas})
+      
+        }catch(error){
+            res.status(400).json({msg:error})   
+        }
+    },
+
+    async getEventsOthersHouses(req,res){
+        var events = await axios.get("http://ucras.di.uminho.pt/v1/games/")
+      
+        var houses = []
+        var iter = 0 
+        for(var event of events.data){
+            if (iter == 0){
+            var bookMarker = event["bookmakers"]
+            for (var house of bookMarker){
+                houses.push(house["key"])
+            }
+            }
+            iter++
+        }
+
+        var jsonResul = []
+        for (var house of houses){
+            var eventHouse = {}
+            eventHouse["casa"] = house 
+            eventHouse["eventos"] = []
+
+            for(var event of events.data){
+            var evento = {}
+            evento["equipa1Nome"] = event["awayTeam"]
+            evento["equipa2Nome"] = event["homeTeam"]
+
+            var tipoDeApostaL = []
+            var tipoDeAposta = {}
+            tipoDeAposta["nome"] = "apostaAPI"
+            tipoDeAposta["listaDeOdds"] = []
+            evento["tipoDeApostas"] 
+            var bookMarker = event["bookmakers"]
+            
+            for (var bm of bookMarker){
+                if(bm["key"] == house){
+                var markets = bm["markets"]
+                for (var m of markets){
+                    var outcomes = m["outcomes"]
+
+                    for(var o of outcomes){
+                    var odd = {}
+                    odd["nome"] = o["name"]
+                    odd["valor"] = o["price"]
+                    tipoDeAposta["listaDeOdds"].push(odd)
+                    }
+                }
+                }
+            }
+
+            tipoDeApostaL.push(tipoDeAposta)
+            evento["tipoDeApostas"] = tipoDeApostaL
+            eventHouse["eventos"].push(evento)
+            } 
+            jsonResul.push(eventHouse)
+        }
+
+      res.status(200).json({jsonResul})
     }
 }
