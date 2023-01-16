@@ -41,58 +41,6 @@ class UserLNFacade {
         return await this.transacaoDAO.getTransactionsByUser(userID)
     }
 
-    // remove
-    async addPromotion(req,res){
-        var minAmount = req.body.minAmount 
-        var expDate = req.body.expDate
-        var perElevation = req.body.perElevation 
-        var eventID = req.body.eventID 
-
-        if (!minAmount || !expDate || !perElevation || !eventID) {
-            res.status(400).json({msg:"erro na requisição"})
-        }
-
-        try{
-            await UserModel.addPromotion(minAmount,expDate,perElevation,eventID)
-            console.log("Promoção adicionada com sucesso")
-            const eventSport = await EventModel.getSportFromEvent(eventID)
-            const sportType = await EventModel.getSportType(eventSport)
-
-            if(sportType == "c"){
-                const teams = await EventModel.getTeamsFromColetiveEvent(eventID)
-                var teamsString = teams["equipa1Nome"] + " x " + teams["equipa2Nome"]
-
-                await UserModel.addAllUsersNotification(
-                    "Promoção",
-                    "Para apostas com um montante mínimo de " + minAmount + " no evento " +
-                    teamsString + " os seus ganhos podem ser multiplicados por " + perElevation + "!" +
-                    " Válida até " + expDate + "."
-                )
-
-                console.log("Notificação adicionada com sucesso")
-
-            }else if(sportType == "d"){
-                const players = await EventModel.getPlayersFromDualEvent(eventID)
-                var playersString = "" + players["jogador1Nome"] + " x " + players["jogador2Nome"]
-    
-                await UserModel.addAllUsersNotification(
-                    "Promoção",
-                    "Para apostas com um montante mínimo de " + minAmount + " no evento " +
-                    playersString + " os seus ganhos podem ser multiplicados por " + perElevation + "!" +
-                    " Válida até " + expDate + "."
-                )
-                console.log("Notificação adicionada com sucesso")
-
-            }else if(sportType == "i"){
-                // TODO
-            }
-
-            res.status(200)
-        }catch(error){
-            res.status(400).json({msg:error})
-        }
-    }
-
     async getNotificationsFromUser(userID){
         console.log("[INVOCAR] notificationDAO.getNotificationsByUser()")
         return await this.notificationDAO.getNotificationsByUser(userID)  
@@ -114,7 +62,7 @@ class UserLNFacade {
 
     async registerUser(username, password, email, nif, iban, birthday){
         var passwordHash=bcrypt.hashSync(password, 10);
-        console.log("[INVOCAR] userDAO.addUser()")
+        console.log("[INVOCAR] userDAO.addUser() with " + passwordHash)
         await this.userDAO.addUser(username, passwordHash, email, nif, iban, birthday)
     }
 
@@ -126,6 +74,8 @@ class UserLNFacade {
 
         console.log("[INVOCAR] bcrypt.compareSync with " + password_hash)
         const verified = bcrypt.compareSync(password, password_hash)
+
+        console.log(password_hash)
 
         if(verified){
             console.log("[INVOCAR] geração de token com userID " + user.iduser)
