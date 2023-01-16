@@ -7,6 +7,7 @@ var SportBetTypesDAO = require('./SportBetTypesDAO')
 var TeamDAO = require('./TeamDAO')
 var NotificationDAO = require('../user_subsystem/NotificationDAO')
 var PromotionDAO = require('./PromotionDAO')
+var EventFollowersDAO = require('./EventFollowersDAO')
 
 class EventLNFacade {
     eventDAO = null
@@ -18,6 +19,7 @@ class EventLNFacade {
     notificationDAO = null
     sportBetTypesDAO = null
     promotionDAO = null
+    eventFollowersDAO = null
 
     constructor(){
         this.eventDAO = new EventDAO()
@@ -32,6 +34,7 @@ class EventLNFacade {
         this.collectiveSportOpponentsDAO = new CollectiveSportOpponentsDAO()
         this.dualSportOpponentsDAO = new DualSportOpponentsDAO()
         this.sportBetTypesDAO = new SportBetTypesDAO()
+        this.eventFollowersDAO = new EventFollowersDAO()
     }
 
     async setEventState(state,eventID,description){
@@ -232,6 +235,58 @@ class EventLNFacade {
     async addPromotion(minAmount,expDate,perElevation,eventID){
         console.log("[INVOCAR] this.promotionDAO.addPromotion")
         await this.promotionDAO.addPromotion(minAmount,expDate,perElevation,eventID);
+    }
+
+    // [TESTED]
+    async follow(eventID,userID){
+        console.log("[INVOCAR] this.eventFollowersDAO.addFollowerOfEvent")
+        await this.eventFollowersDAO.addFollowerOfEvent(userID,eventID)
+    }
+
+    // [TESTED]
+    async follow_cancel(eventID,userID){
+        console.log("[INVOCAR] this.eventFollowersDAO.removeFollowerOfEvent")
+        await this.eventFollowersDAO.removeFollowerOfEvent(userID,eventID)
+    }
+
+    // [TESTED]
+    async follows(userID){
+        console.log("[INVOCAR] this.eventFollowersDAO.getEventsByFollower")
+        const events = await this.eventFollowersDAO.getEventsByFollower(userID)
+
+        var collectiveTeams = []
+        var collectiveIds = []
+        var dualPlayers = []
+        var dualIds = []
+        
+        for (const event of events){
+            console.log("[INVOCAR] await this.eventDAO.getSportFromEvent")
+            const sport = await this.eventDAO.getSportFromEvent(event)
+            console.log("[INVOCAR] this.sportDAO.getSportType")
+            const type = await this.sportDAO.getSportType(sport)
+
+            if (type == "c"){
+                console.log("[INVOCAR] this.collectiveSportOpponentsDAO.getTeamsFromColetiveEvent")
+                collectiveTeams.push(await this.collectiveSportOpponentsDAO.getTeamsFromColetiveEvent(event)) // [TESTED]   
+                collectiveIds.push(event)
+            }
+
+            if (type == "d"){
+                console.log("[INVOCAR] this.dualSportOpponentsDAO.getPlayersFromDualEvent")
+                dualPlayers.push(await this.dualSportOpponentsDAO.getPlayersFromDualEvent(event)) // [TESTED]
+                dualIds.push(event)
+            }
+        }
+
+        var jsonRes = {}
+        jsonRes["collectiveTeams"] = collectiveTeams
+        jsonRes["collectiveIds"] = collectiveIds
+        jsonRes["dualPlayers"] = dualPlayers
+        jsonRes["dualIds"] = dualIds
+
+        console.log("RES", jsonRes)
+
+        return jsonRes
     }
 }
 

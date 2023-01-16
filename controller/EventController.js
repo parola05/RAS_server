@@ -1,3 +1,4 @@
+const JWT = require('jsonwebtoken')
 const EventLNFacade_ = require('../models/event_subsystem/EventLNFacade')
 const EventLNFacade = new EventLNFacade_()
 
@@ -208,6 +209,58 @@ module.exports = {
             console.log("[INVOCAR] EventLNFacade.addPromotion")
             await EventLNFacade.addPromotion(minAmount,expDate,perElevation,eventID)
             res.status(200).json({msg:"sucesso"})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
+
+    // [TESTED]
+    async follow(req,res){
+        var eventID = req.body.eventID
+        var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
+
+        if (!eventID || !user) {
+            res.status(400).json({msg:"erro na requisição"})
+        }
+
+        try{
+            console.log("[INVOCAR] EventLNFacade.follow")
+            await EventLNFacade.follow(eventID,user.userID)
+            res.status(200).json({msg:"sucesso"})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
+
+    // [TESTED]
+    async follow_cancel(req,res){
+        var eventID = req.body.eventID
+        var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
+
+        if (!eventID || !user) {
+            res.status(400).json({msg:"erro na requisição"})
+        }
+
+        try{
+            console.log("[INVOCAR] EventLNFacade.follow_cancel")
+            await EventLNFacade.follow_cancel(eventID,user.userID)
+            res.status(200).json({msg:"sucesso"})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
+
+    // [TESTED]
+    async follows(req,res){
+        var user = JWT.verify(req.header('authorization').substring(7), "Rasbet"); 
+
+        if (!user) {
+            res.status(400).json({msg:"erro na requisição"})
+        }
+
+        try{
+            const events = await EventLNFacade.follows(user.userID)
+            res.status(200).json({events:events})
         }catch(error){
             res.status(400).json({msg:error})
         }

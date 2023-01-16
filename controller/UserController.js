@@ -1,5 +1,3 @@
-var UserModel = require('../models/UserModel')
-var EventModel = require('../models/EventModel')
 const JWT = require('jsonwebtoken')
 const bcrypt = require('bcryptjs');
 
@@ -71,58 +69,6 @@ module.exports = {
             console.log("[INVOCAR] UserLNFacade.getUserTransactions")
             var data = await UserLNFacade.getUserTransactions(user.userID)
             res.status(200).json({transactions:data})
-        }catch(error){
-            res.status(400).json({msg:error})
-        }
-    },
-
-    // remove
-    async addPromotion(req,res){
-        var minAmount = req.body.minAmount 
-        var expDate = req.body.expDate
-        var perElevation = req.body.perElevation 
-        var eventID = req.body.eventID 
-
-        if (!minAmount || !expDate || !perElevation || !eventID) {
-            res.status(400).json({msg:"erro na requisição"})
-        }
-
-        try{
-            await UserModel.addPromotion(minAmount,expDate,perElevation,eventID)
-            console.log("Promoção adicionada com sucesso")
-            const eventSport = await EventModel.getSportFromEvent(eventID)
-            const sportType = await EventModel.getSportType(eventSport)
-
-            if(sportType == "c"){
-                const teams = await EventModel.getTeamsFromColetiveEvent(eventID)
-                var teamsString = teams["equipa1Nome"] + " x " + teams["equipa2Nome"]
-
-                await UserModel.addAllUsersNotification(
-                    "Promoção",
-                    "Para apostas com um montante mínimo de " + minAmount + " no evento " +
-                    teamsString + " os seus ganhos podem ser multiplicados por " + perElevation + "!" +
-                    " Válida até " + expDate + "."
-                )
-
-                console.log("Notificação adicionada com sucesso")
-
-            }else if(sportType == "d"){
-                const players = await EventModel.getPlayersFromDualEvent(eventID)
-                var playersString = "" + players["jogador1Nome"] + " x " + players["jogador2Nome"]
-    
-                await UserModel.addAllUsersNotification(
-                    "Promoção",
-                    "Para apostas com um montante mínimo de " + minAmount + " no evento " +
-                    playersString + " os seus ganhos podem ser multiplicados por " + perElevation + "!" +
-                    " Válida até " + expDate + "."
-                )
-                console.log("Notificação adicionada com sucesso")
-
-            }else if(sportType == "i"){
-                // TODO
-            }
-
-            res.status(200)
         }catch(error){
             res.status(400).json({msg:error})
         }

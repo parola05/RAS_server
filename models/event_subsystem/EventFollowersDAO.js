@@ -22,7 +22,7 @@ module.exports = class EventFollowers {
     }
 
     async addFollowerOfEvent(userID, eventID){
-        const query1 = "INSERT INTO evento_seguidores (evento_ID, user_ID) VALUES ('"+eventID+"','"+userID+")"
+        const query1 = "INSERT INTO evento_seguidores (evento_ID, user_ID) VALUES ("+eventID+","+userID+")"
 
         try{
             await query(query1)
@@ -41,5 +41,23 @@ module.exports = class EventFollowers {
             console.log(err) 
             throw Error("Erro em conectar com base de dados") 
         }      
+    }
+
+    async getEventsByFollower(userID){
+        var query1 = "SELECT * FROM evento_seguidores WHERE user_ID = "+userID+""  
+  
+        try{
+            var rows = await query(query1)
+            
+            var event_id_rows = []
+            for (const row of rows){
+                event_id_rows.push(row.evento_ID)
+            }
+            
+            return event_id_rows
+        }catch(err){
+            console.log(err)
+            throw Error("Erro em conectar com base de dados") 
+        }
     }
 }
