@@ -1,18 +1,18 @@
 const express = require('express')
 const router = express.Router()
-var controller = require('../controllers/UserController')
+var controller = require('../controller/UserController')
 
-router.get('/',controller.getUsers)
-router.post('/admin',controller.setUserAdmin)
-router.post('/spe',controller.setUserSpe)
-router.get('/data',controller.getUserData)
-router.get('/transactions',controller.getUserTransactions)
+router.get('/',controller.getUsers) // [TESTED]
+router.post('/admin',controller.setUserAdmin) // [TESTED]
+router.post('/spe',controller.setUserSpe) // [TESTED]
+router.get('/data',controller.getUserData) // [TESTED]
+router.get('/transactions',controller.getUserTransactions) // [TESTED]
 router.post('/promotion',controller.addPromotion)
-router.get('/notifications',controller.getNotificationsFromUser)
-router.post('/deposit',controller.deposit)
-router.post('/raise',controller.raise)
-router.post('/register',controller.registerUser)
-router.post('/login',controller.login)
+router.get('/notifications',controller.getNotificationsFromUser) // [TESTED]
+router.post('/deposit',controller.deposit) // [TESTED]
+router.post('/raise',controller.raise) // [TESTED]
+router.post('/register',controller.registerUser) // [TESTED]
+router.post('/login',controller.login) // [TESTED]
 router.post('/editUser',controller.editUser)
 
 module.exports = router
