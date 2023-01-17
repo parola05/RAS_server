@@ -1,6 +1,7 @@
 var BetDAO = require('./BetDAO')
 var BuletinDAO = require('./BuletinDAO')
 var UserDAO = require('../user_subsystem/UserDAO')
+var NotificationDAO = require('../user_subsystem/NotificationDAO')
 var TransactionDAO = require('../user_subsystem/TransacaoDAO')
 var EventDAO = require('../event_subsystem/EventDAO')
 var CollectiveSportOpponentsDAO = require('../event_subsystem/CollectiveSportOpponentsDAO')
@@ -16,6 +17,7 @@ class BetLNFacade {
     dualSportOpponentsDAO = null
     sportDAO = null
     transactionDAO = null
+    notificationDAO = null
 
     constructor(){
         this.betDAO = new BetDAO()
@@ -26,6 +28,7 @@ class BetLNFacade {
         this.collectiveSportOpponentsDAO = new CollectiveSportOpponentsDAO()
         this.dualSportOpponentsDAO = new DualSportOpponentsDAO()
         this.sportDAO = new SportDAO()
+        this.notificationDAO = new NotificationDAO()
     }
 
     async addBuletin(amount,gain,type,userID,bets){
@@ -78,6 +81,74 @@ class BetLNFacade {
         resJson["betsDualSports"] = dualBets
 
         return resJson
+    }
+
+    checkIfBetHappens(odd_selected,betTypeList){
+        var happen = false 
+
+        for(const betType of betTypeList){
+            for(const odd of betType.oddList){
+                if (odd_selected == odd.nome && odd.odd == 1){
+                    happen = true
+                }
+            }
+        }
+
+        return happen 
+    }
+
+    async addResult(eventID,betTypeList){
+        console.log("[INVOCAR] this.betDAO.getBetsWaitingFromEvent")
+        const betsFromEvent = await this.betDAO.getBetsWaitingFromEvent(eventID)
+            
+        for(const betFromEvent of betsFromEvent){
+            const betHappens = this.checkIfBetHappens(betFromEvent.odd_selected,betTypeList)
+
+            if(betHappens){
+                console.log("[INVOCAR] setBetState")
+                await this.betDAO.setBetState(betFromEvent.idbet,"h")
+                console.log("[INVOCAR] this.buletinDAO.getBuletinType")
+                const buletinType = await this.buletinDAO.getBuletinType(betFromEvent.buletin)
+            
+                if(buletinType == "m"){
+                    console.log("[INVOCAR] this.betDAO.checkIfBuletinMSuccess with m")
+                    const buletinSuccess = await this.betDAO.checkIfBuletinMSuccess(betFromEvent.buletin)
+
+                    if(buletinSuccess){
+                        console.log("[INVOCAR] this.buletinDAO.getUserFromBuletin")
+                        const userFromBuletin = await this.buletinDAO.getUserFromBuletin(betFromEvent.buletin) 
+                        console.log("[INVOCAR] this.userDAO.getUserByID")
+                        var userBalance =  (await this.userDAO.getUserByID(userFromBuletin)).balance 
+                        console.log("[INVOCAR] this.buletinDAO.getBuletinGain")
+                        const buletinGain = await this.buletinDAO.getBuletinGain(betFromEvent.buletin) 
+                        console.log("[INVOCAR] this.userDAO.setBalance")
+                        await this.userDAO.setBalance(userBalance + buletinGain,"ga",buletinGain,userFromBuletin)
+                        
+                        await this.notificationDAO.addNotification(
+                            "Ganho de aposta",
+                            "Parabéns, você ganhou uma aposta! " + buletinGain + "$ foi despositado na sua conta!",
+                            userFromBuletin
+                        )
+                    }
+                }else if(buletinType == "s"){
+                    console.log("[INVOCAR] this.buletinDAO.getUserFromBuletin")
+                    const userFromBuletin = await this.buletinDAO.getUserFromBuletin(betFromEvent.buletin) 
+                    console.log("[INVOCAR] this.userDAO.getUserByID")
+                    var userBalance =  (await this.userDAO.getUserByID(userFromBuletin)).balance 
+                    console.log("[INVOCAR] this.userDAO.setBalance")
+                    await this.userDAO.setBalance(userBalance + betFromEvent.gain,"ga",betFromEvent.gain,userFromBuletin)
+                    
+                    await this.notificationDAO.addNotification(
+                        "Ganho de aposta",
+                        "Parabéns, você ganhou uma aposta! " + betFromEvent.gain + "$ foi despositado na sua conta!",
+                        userFromBuletin
+                    )
+                }
+            }else{
+                console.log("[INVOCAR] setBetState - bet noy happened")
+                await this.betDAO.setBetState(betFromEvent.idbet,"n")
+            }
+        }
     }
 }
 

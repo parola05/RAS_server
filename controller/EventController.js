@@ -1,6 +1,7 @@
 const JWT = require('jsonwebtoken')
 const EventLNFacade_ = require('../models/event_subsystem/EventLNFacade')
 const EventLNFacade = new EventLNFacade_()
+var axios = require('axios');
 
 module.exports = {
 
@@ -266,7 +267,7 @@ module.exports = {
         }
     },
 
-    // [IN TEST]
+    // [TESTED]
     async updateEventOdds(req,res){
         var event = req.body.event
 
@@ -281,5 +282,83 @@ module.exports = {
         }catch(error){
             res.status(400).json({msg:error})
         }
+    },
+
+    // [TESTED]
+    async getBetTypeStructureBySport(req,res){
+        var sportID = req.body.desportoID
+
+        if(!sportID){
+            res.status(400).json({msg:"erro na requisição"})   
+        }
+
+        try{
+            console.log("[INVOCAR] EventLNFacade.getBetTypeStructureBySport")
+            const listaTipoDeApostas = await EventLNFacade.getBetTypeStructureBySport(sportID)
+            res.status(200).json({estrutura: listaTipoDeApostas})
+        }catch(error){
+            res.status(400).json({msg:error})   
+        }
+    },
+
+    // [TESTED]
+    async getEventsOthersHouses(req,res){
+        console.log("[INVOCAR] getEventsOtherHouses")
+        var events = await axios.get("http://ucras.di.uminho.pt/v1/games/")
+      
+        var houses = []
+        var iter = 0 
+        for(var event of events.data){
+            if (iter == 0){
+            var bookMarker = event["bookmakers"]
+            for (var house of bookMarker){
+                houses.push(house["key"])
+            }
+            }
+            iter++
+        }
+
+        var jsonResul = []
+        for (var house of houses){
+            var eventHouse = {}
+            eventHouse["casa"] = house 
+            eventHouse["eventos"] = []
+
+            for(var event of events.data){
+            var evento = {}
+            evento["equipa1Nome"] = event["awayTeam"]
+            evento["equipa2Nome"] = event["homeTeam"]
+
+            var tipoDeApostaL = []
+            var tipoDeAposta = {}
+            tipoDeAposta["nome"] = "apostaAPI"
+            tipoDeAposta["listaDeOdds"] = []
+            evento["tipoDeApostas"] 
+            var bookMarker = event["bookmakers"]
+            
+            for (var bm of bookMarker){
+                if(bm["key"] == house){
+                var markets = bm["markets"]
+                for (var m of markets){
+                    var outcomes = m["outcomes"]
+
+                    for(var o of outcomes){
+                    var odd = {}
+                    odd["nome"] = o["name"]
+                    odd["valor"] = o["price"]
+                    tipoDeAposta["listaDeOdds"].push(odd)
+                    }
+                }
+                }
+            }
+
+            tipoDeApostaL.push(tipoDeAposta)
+            evento["tipoDeApostas"] = tipoDeApostaL
+            eventHouse["eventos"].push(evento)
+            } 
+            jsonResul.push(eventHouse)
+        }
+
+      res.status(200).json({jsonResul})
     }
 }

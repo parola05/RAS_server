@@ -289,10 +289,33 @@ class EventLNFacade {
         return jsonRes
     }
 
-    // [IN TEST]
+    // [TESTED]
     async updateEventOdds(eventID,betTypeList){
         console.log("[INVOCAR] eventDAO.updateBetType")
         this.eventDAO.updateBetType(eventID,betTypeList)
+    }
+
+    // [TESTED]
+    async getBetTypeStructureBySport(sportID){
+        var listaTipoDeApostas = []
+
+        console.log("[INVOCAR] this.sportBetTypesDAO.getBetTypeBySport")
+        const betTypes = await this.sportBetTypesDAO.getBetTypeBySport(sportID)
+        
+        for (const tipoDeAposta of betTypes){
+
+            var tipoDeApostaJson = {}
+            tipoDeApostaJson["nome"] = tipoDeAposta
+            
+            console.log("[INVOCAR] this.eventDAO.getOddListFromBetType")
+            var listaDeOdds = await this.eventDAO.getOddListFromBetType(tipoDeAposta)
+    
+            tipoDeApostaJson["listaDeOdds"] = listaDeOdds
+
+            listaTipoDeApostas.push(tipoDeApostaJson)
+        }
+
+        return listaTipoDeApostas
     }
 }
 

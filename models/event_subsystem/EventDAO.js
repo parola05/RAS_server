@@ -223,4 +223,27 @@ module.exports = class EventDAO {
             console.log(err)
         }     
     }
+
+    async getOddListFromBetType(betTypeName){
+        var query1 = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'"+betTypeName+"'"
+
+        var listaDeOdds = []
+
+        try{
+            var rows = await query(query1)
+            for (const coluna of rows){
+                var nomeColuna = coluna["COLUMN_NAME"]
+                if(nomeColuna.substring(0,2) != "id" && nomeColuna.substring(0,6) != "evento"){
+                    var odd = {}
+                    odd["nome"] = nomeColuna
+                    odd["odd"] = -1
+                    listaDeOdds.push(odd)
+                }
+            }
+
+            return listaDeOdds
+        }catch(err){
+            console.log(err)
+        }
+    }
 }

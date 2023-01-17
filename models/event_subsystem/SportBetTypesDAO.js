@@ -42,4 +42,16 @@ module.exports = class SportBetTypesDAO {
             console.log(err)
         }  
     }
+
+    async getBetTypesBySport(sportID){
+        console.log("[INVOCAR] query1")
+        var query1 = "SELECT tipo_de_aposta FROM esportes_tipo_de_apostas WHERE esporte = "+sportID
+
+        try{
+            var rows = await query(query1)
+            return rows
+        }catch(error){
+            console.log(err)
+        }
+    }
 }

@@ -58,4 +58,22 @@ module.exports = {
             res.status(400).json({msg:error})
         }
     },
+
+     // [IN TEST] 
+     async addResult(req,res){
+        const eventID = req.body.eventID
+        const betTypeList = req.body.betTypeList 
+        
+        if(!eventID || !betTypeList){
+            res.status(400).json({msg:"erro na requisição"})   
+        }
+
+        try{
+            console.log("[INVOCAR] BetLNFacade.addResult")
+            await BetLNFacade.addResult(eventID,betTypeList)
+            res.status(200).json({msg:"sucesso"})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    },
 }

@@ -40,4 +40,26 @@ module.exports = class BuletinDAO {
             throw Error("Erro em conectar com base de dados") 
         }
     }
+
+    async getUserFromBuletin(buletinID){
+        var query1 = "SELECT user_buletin FROM buletin WHERE idbuletin = "+buletinID
+
+        try{
+            var rows = await query(query1)
+            return rows[0]["user_buletin"]
+        }catch(error){
+            console.log(err)
+        }   
+    }
+
+    async getBuletinGain(buletinID){
+        var query1 = "SELECT gain FROM buletin WHERE idbuletin = "+buletinID
+
+        try{
+            var rows = await query(query1)
+            return rows[0]["gain"]
+        }catch(error){
+            console.log(err)
+        }    
+    }
 }
