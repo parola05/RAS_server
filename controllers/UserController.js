@@ -138,10 +138,8 @@ module.exports = {
             return
         }
 
-        var passwordHash=bcrypt.hashSync(password, 10);
-
         try{
-            await UserLNFacade.registerUser(username,passwordHash,email,nif,iban,birthday)
+            await UserLNFacade.registerUser(username,password,email,nif,iban,birthday)
             console.log("[INVOCAR] res.status(200)")
             res.status(200).json({msg:"sucesso"})
         }catch(error){

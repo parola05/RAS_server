@@ -30,7 +30,7 @@ module.exports = class PromotionDAO {
         console.log("[INVOCAR] this.addPromotion_")
         this.addPromotion_(minAmount,expDate,perElevation,eventID)
         
-        const userAll = [3]
+        const userAll = [1]
         
         console.log("[INVOCAR]  this.notifiyAll")
         this.notifyAll( 

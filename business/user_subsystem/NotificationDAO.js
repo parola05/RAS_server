@@ -37,7 +37,7 @@ module.exports = class NotificationDAO {
 
     async getNotificationsByUser(userID){
         console.log("[INVOCAR] query1")
-        var query1 = "SELECT * FROM notification WHERE userid = "+userID+" OR userid = 3"  
+        var query1 = "SELECT * FROM notification WHERE userid = "+userID+" OR userid = 1"  
         try{
             var rows = await query(query1)
             return rows
