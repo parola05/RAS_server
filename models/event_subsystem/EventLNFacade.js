@@ -288,6 +288,12 @@ class EventLNFacade {
 
         return jsonRes
     }
+
+    // [IN TEST]
+    async updateEventOdds(eventID,betTypeList){
+        console.log("[INVOCAR] eventDAO.updateBetType")
+        this.eventDAO.updateBetType(eventID,betTypeList)
+    }
 }
 
 module.exports = EventLNFacade

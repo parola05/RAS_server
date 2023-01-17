@@ -89,6 +89,42 @@ module.exports = class EventDAO {
         }
     }
 
+    async updateBetType(eventID,betTypeList){
+        console.log("[INVOCAR] eventDAO.updateBetType in for")
+        for (var betType of betTypeList){
+            if (betType["oddList"].length > 0){
+                this.updateBetType_(betType["nome"],betType["oddList"],eventID)
+            }
+        }
+        console.log("[INVOCAR] this.eventFollowersDAO.getFollowers")
+        const users = await this.eventFollowersDAO.getFollowersByEvent(eventID)
+        console.log("[INVOCAR] notifyAll with " + users)
+        this.notifyAll(users,"Evento " + eventID, "Odds atualizadas!")
+    }
+
+    async updateBetType_(nomeTipoDeAposta,listaDeOdds,eventID){
+
+        var listaDeOddsNomes = ""
+        
+        listaDeOdds.forEach((odd) =>{
+            listaDeOddsNomes = listaDeOddsNomes + "`" + odd["nome"] + "` = "+odd["odd"] + ","
+        })
+
+        listaDeOddsNomes = listaDeOddsNomes.substring(0, listaDeOddsNomes.length-1);
+                
+        console.log("[INVOCAR] query1")
+        var query1 = "UPDATE `"+nomeTipoDeAposta+"` SET "+listaDeOddsNomes+" WHERE `evento_"+nomeTipoDeAposta+"` = " +eventID + ";"
+
+        console.log(query1)
+        
+        try{
+            await query(query1)
+        }catch(err){
+            console.log(err)
+            throw Error("Erro em conectar com base de dados") 
+        }
+    }
+
     async createBetType(betTypeName,oddNames){
         var query1 = "CREATE TABLE `ras_database`.`"+betTypeName+"` ("+
         "`id"+betTypeName+"` INT NOT NULL AUTO_INCREMENT, "

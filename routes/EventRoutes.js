@@ -21,5 +21,6 @@ router.get('/eventsOthersHouses',controller.getEventsOthersHouses)
 router.post('/follow',controllerNew.follow) // [TESTED]
 router.post('/follow-cancel',controllerNew.follow_cancel) // [TESTED]
 router.post('/follows',controllerNew.follows) // [TESTED]
+router.post('/odds',controllerNew.updateEventOdds) // [IN TEST]
 
 module.exports = router

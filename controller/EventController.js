@@ -265,4 +265,21 @@ module.exports = {
             res.status(400).json({msg:error})
         }
     },
+
+    // [IN TEST]
+    async updateEventOdds(req,res){
+        var event = req.body.event
+
+        if (!event) {
+            res.status(400).json({msg:"erro na requisição"})
+        }  
+        
+        try{
+            console.log("[INVOCAR] EventLNFacade.updateEventOdds")
+            await EventLNFacade.updateEventOdds(event["eventID"],event["betTypeList"])
+            res.status(200).json({msg:"sucesso"})
+        }catch(error){
+            res.status(400).json({msg:error})
+        }
+    }
 }
